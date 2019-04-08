@@ -15,9 +15,11 @@ functional-connectivity estimation, in Medical Image Analysis (2019).
 Installation
 ============
 
-```
-python setup.py install
-```
+
+::
+
+    python setup.py install --user
+
 
 posce requires:
 
