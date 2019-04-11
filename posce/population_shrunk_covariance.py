@@ -4,7 +4,7 @@ from sklearn.base import BaseEstimator, TransformerMixin, clone
 from sklearn.datasets.base import Bunch
 from sklearn.covariance import LedoitWolf
 from nilearn.connectome.connectivity_matrices import (
-    is_spd,
+    _check_spd,
     sym_matrix_to_vec,
     _geometric_mean,
     _map_eigenvalues,
@@ -37,7 +37,14 @@ def regularized_eigenvalue_decomposition(C, explained_variance_threshold):
     L is the diagonal matrix of the truncated eigenvalues,
     alpha is set such that trace(Cr) = trace(C)
     """
-    # TODO check C is spd, threshold is in [0, 1]
+    _check_spd(C)
+    if explained_variance_threshold > 1 or explained_variance_threshold < 1:
+        raise ValueError(
+            "Threshold of the explained variance eigenvalue"
+            "decomposition should be between 0 and 1 instead"
+            " of {}".format(explained_variance_threshold)
+        )
+
     # eigenvalue decomposition
     eigenvalues, eigenvectors = eigh(C)
 
