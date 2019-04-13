@@ -38,10 +38,10 @@ def regularized_eigenvalue_decomposition(C, explained_variance_threshold):
     alpha is set such that trace(Cr) = trace(C)
     """
     _check_spd(C)
-    if explained_variance_threshold >= 1 or explained_variance_threshold < 0:
+    if explained_variance_threshold > 1 or explained_variance_threshold < 0:
         raise ValueError(
             "Threshold of the explained variance eigenvalue"
-            "decomposition should be between 0 and lower than 1 instead"
+            "decomposition should be between 0 and 1 instead"
             " of {}".format(explained_variance_threshold)
         )
 
@@ -51,20 +51,19 @@ def regularized_eigenvalue_decomposition(C, explained_variance_threshold):
     # select k eigenvalues that explains has variance
     explained_variance_ratio = eigenvalues / np.sum(eigenvalues)
     cumulative_variance_ratio = np.cumsum(explained_variance_ratio[::-1])
-
     k = np.searchsorted(cumulative_variance_ratio, 
-                        explained_variance_threshold)
+                        explained_variance_threshold) + 1
 
     # Cr = alpha*I + Q L Q.T
-    Cr = np.dot(eigenvalues[-k:] * eigenvectors[:, -k:], eigenvectors[:, -k:].T)
+    Cr = np.dot(eigenvalues[:k] * eigenvectors[:, :k], eigenvectors[:, :k].T)
 
     # set alpha s.t. trace(C) = trace(Cr)
     n_features = C.shape[0]
     alpha = (np.trace(C) - np.trace(Cr)) / n_features
 
     return Bunch(
-        eigenvalues=eigenvalues[-k:], 
-        eigenvectors=eigenvectors[:, -k:], 
+        eigenvalues=eigenvalues[:k],
+        eigenvectors=eigenvectors[:, :k],
         alpha=alpha
     )
 
