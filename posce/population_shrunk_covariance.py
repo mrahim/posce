@@ -51,10 +51,9 @@ def regularized_eigenvalue_decomposition(C, explained_variance_threshold):
     # select k eigenvalues that explains has variance
     explained_variance_ratio = eigenvalues / np.sum(eigenvalues)
     cumulative_variance_ratio = np.cumsum(explained_variance_ratio[::-1])
-    for i, val in enumerate(cumulative_variance_ratio):
-        k = i
-        if val >= explained_variance_threshold:
-            break
+
+    k = np.searchsorted(cumulative_variance_ratio, 
+                        explained_variance_threshold)
 
     # Cr = alpha*I + Q L Q.T
     Cr = np.dot(eigenvalues[-k:] * eigenvectors[:, -k:], eigenvectors[:, -k:].T)
@@ -64,7 +63,9 @@ def regularized_eigenvalue_decomposition(C, explained_variance_threshold):
     alpha = (np.trace(C) - np.trace(Cr)) / n_features
 
     return Bunch(
-        eigenvalues=eigenvalues[-k:], eigenvectors=eigenvectors[:, -k:], alpha=alpha
+        eigenvalues=eigenvalues[-k:], 
+        eigenvectors=eigenvectors[:, -k:], 
+        alpha=alpha
     )
 
 
@@ -187,7 +188,9 @@ class PopulationShrunkCovariance(BaseEstimator, TransformerMixin):
 
         # compute prior mean
         if self.prior_mean_type == "geometric":
-            self.prior_mean_ = _geometric_mean(covariances, max_iter=30, tol=1e-7)
+            self.prior_mean_ = _geometric_mean(covariances, 
+                                               max_iter=30, 
+                                               tol=1e-7)
         elif self.prior_mean_type == "empirical":
             self.prior_mean_ = np.mean(covariances, axis=0)
         else:
@@ -206,19 +209,22 @@ class PopulationShrunkCovariance(BaseEstimator, TransformerMixin):
         # compute the population prior dispersion
         connectivities = [
             _map_eigenvalues(
-                np.log, self.prior_whitening_.dot(cov).dot(self.prior_whitening_)
+                np.log, 
+                self.prior_whitening_.dot(cov).dot(self.prior_whitening_)
             )
             for cov in covariances
         ]
         connectivities = np.array(connectivities)
         connectivities = sym_matrix_to_vec(connectivities)
         self.prior_cov_ = np.mean(
-            [np.expand_dims(c, 1).dot(np.expand_dims(c, 0)) for c in connectivities],
+            [np.expand_dims(c, 1).dot(np.expand_dims(c, 0)) 
+             for c in connectivities],
             axis=0,
         )
         # approximate the population prior dispersion
         self.prior_cov_approx_ = regularized_eigenvalue_decomposition(
-            self.prior_cov_, explained_variance_threshold=0.7
+            self.prior_cov_, 
+            explained_variance_threshold=0.7
         )
         return self
 
@@ -244,7 +250,8 @@ class PopulationShrunkCovariance(BaseEstimator, TransformerMixin):
         # transform in the tangent space
         connectivities = [
             _map_eigenvalues(
-                np.log, self.prior_whitening_.dot(cov).dot(self.prior_whitening_)
+                np.log, 
+                self.prior_whitening_.dot(cov).dot(self.prior_whitening_)
             )
             for cov in covariances
         ]
@@ -254,7 +261,9 @@ class PopulationShrunkCovariance(BaseEstimator, TransformerMixin):
 
         shrunk_connectivities = [
             shrunk_covariance_embedding(
-                c, self.prior_cov_approx_, shrinkage=self.shrinkage
+                cov_embedding=c,
+                prior_cov_approx=self.prior_cov_approx_,
+                shrinkage=self.shrinkage,
             )
             for c in connectivities
         ]
