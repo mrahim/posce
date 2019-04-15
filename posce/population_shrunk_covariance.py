@@ -37,7 +37,6 @@ def regularized_eigenvalue_decomposition(C, explained_variance_threshold):
     L is the diagonal matrix of the truncated eigenvalues,
     alpha is set such that trace(Cr) = trace(C)
     """
-    _check_spd(C)
     if explained_variance_threshold > 1 or explained_variance_threshold < 0:
         raise ValueError(
             "Threshold of the explained variance eigenvalue"
